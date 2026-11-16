@@ -1,15 +1,40 @@
 # Grizzly Music Studio - lesson tracker
 
-# Main data: each student's name maps to their instrument, level, and rate
-students = {
-    "Maya Lopez": {"instrument": "piano", "level": "beginner", "rate": 30.00},
-    "Eli Carter": {"instrument": "guitar", "level": "intermediate", "rate": 35.00},
-    "Ava Nguyen": {"instrument": "piano", "level": "advanced", "rate": 40.00},
-}
+import csv
+from pathlib import Path
+
+# CSV files live in the same folder as this script, no matter where it is run from
+FOLDER = Path(__file__).parent
+STUDENTS_FILE = FOLDER / "students.csv"
+
+
+# Reads students.csv into a dictionary; rates are converted from text to numbers
+def load_students():
+    students = {}
+    try:
+        with open(STUDENTS_FILE, newline="") as file:
+            for row in csv.DictReader(file):
+                students[row["name"]] = {
+                    "instrument": row["instrument"],
+                    "level": row["level"],
+                    "rate": float(row["rate"]),
+                }
+    except FileNotFoundError:
+        print("students.csv not found. Starting with no students.")
+    return students
+
+
+# Writes the students dictionary back to students.csv
+def save_students(students):
+    with open(STUDENTS_FILE, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["name", "instrument", "level", "rate"])
+        for name, info in students.items():
+            writer.writerow([name, info["instrument"], info["level"], f"{info['rate']:.2f}"])
 
 
 # Prints every student with their instrument, level, and lesson rate
-def view_students():
+def view_students(students):
     if not students:
         print("No students yet.")
         return
@@ -41,7 +66,7 @@ def get_option(prompt, options):
 
 
 # Adds a new student, or updates the level and rate if the student already exists
-def add_student():
+def add_student(students):
     name = input("Student name: ").strip().title()
     if name == "":
         print("Name cannot be blank.")
@@ -73,19 +98,22 @@ def show_menu():
     print("7. Save and exit")
 
 
-# Shows the menu over and over until the user chooses to exit
+# Loads the data, runs the menu until the user exits, then saves
 def main():
+    students = load_students()
+
     while True:
         show_menu()
         choice = input("Choose an option (1-7): ").strip()
 
         if choice == "7":
-            print("Goodbye!")
+            save_students(students)
+            print("Data saved. Goodbye!")
             break
         elif choice == "1":
-            view_students()
+            view_students(students)
         elif choice == "2":
-            add_student()
+            add_student(students)
         elif choice in ["3", "4", "5", "6"]:
             print("Coming soon")
         else:
